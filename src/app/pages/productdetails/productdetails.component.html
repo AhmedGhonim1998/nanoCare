@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gradient-to-b from-white via-blue-50/30 to-white py-8">
+<div class="min-h-screen bg-gradient-to-b from-white via-blue-50/30 to-white py-8   pt-24 md:pt-28 min-h-screen">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" *ngIf="product">
     
     <!-- Back Navigation -->
@@ -30,16 +30,20 @@
           </div>
 
           <!-- Favorite Button -->
-          <button class="absolute top-6 right-6 z-20 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center text-slate-600 hover:text-red-500 hover:bg-red-50 border border-slate-200 hover:border-red-200 transition-all shadow-sm">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+          <button (click)="toggleFavorite(product)"
+                  class="absolute top-6 right-6 z-20 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-xl flex items-center justify-center border border-slate-200 transition-all shadow-sm"
+                  [class]="isFavorite(product.id) ? 'text-red-500 bg-red-50 border-red-200' : 'text-slate-600 hover:text-red-500 hover:bg-red-50 hover:border-red-200'">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path [attr.d]="isFavorite(product.id) ? 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z' : 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'"
+                    [attr.fill]="isFavorite(product.id) ? 'currentColor' : 'none'"
+                    stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
             </svg>
           </button>
 
           <!-- Main Product Image -->
           <div class="relative h-[400px] flex items-center justify-center">
             <div class="absolute inset-0 bg-gradient-to-b from-blue-50/50 to-transparent rounded-3xl"></div>
-            <img [src]="product.image" 
+            <img [src]="selectedImage" 
                  [alt]="product.name" 
                  class="relative max-w-full max-h-full object-contain drop-shadow-2xl group-hover:scale-105 transition-transform duration-700">
           </div>
@@ -53,19 +57,28 @@
           </div>
         </div>
 
-        <!-- Additional Images (if available) -->
+        <!-- Additional Images -->
         <div class="flex gap-3">
-          <div *ngFor="let img of getAdditionalImages(product.id)" 
-               class="w-20 h-20 bg-white rounded-2xl border border-slate-200 flex items-center justify-center cursor-pointer hover:border-blue-300 hover:shadow-md transition-all">
+          <div *ngFor="let img of getAllImages(product.id); let i = index" 
+               class="w-20 h-20 bg-white rounded-2xl border flex items-center justify-center cursor-pointer transition-all hover:shadow-md relative"
+               [class]="i === selectedImageIndex ? 'border-blue-500 border-2 ring-2 ring-blue-200' : 'border-slate-200 hover:border-blue-300'"
+               (click)="selectImage(i)">
             <img [src]="img" 
-                 [alt]="product.name + ' variation'" 
+                 [alt]="product.name + ' image ' + (i + 1)" 
                  class="w-16 h-16 object-contain">
+            <!-- Selected indicator -->
+            <div *ngIf="i === selectedImageIndex" 
+                 class="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+              <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
           </div>
         </div>
 
         <!-- Product Highlights -->
         <div class="grid grid-cols-2 gap-4">
-          <div class="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-4 border border-blue-100">
+          <div class="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-4 border border-blue-100 hover:shadow-md transition-all">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,7 +92,7 @@
             </div>
           </div>
           
-          <div class="bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl p-4 border border-emerald-100">
+          <div class="bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl p-4 border border-emerald-100 hover:shadow-md transition-all">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,14 +184,14 @@
           <div class="flex items-center gap-4">
             <div class="flex items-center bg-white border border-slate-200 rounded-2xl">
               <button (click)="decreaseQuantity()" 
-                      class="w-12 h-12 flex items-center justify-center text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-l-2xl">
+                      class="w-12 h-12 flex items-center justify-center text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-l-2xl transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
                 </svg>
               </button>
               <span class="w-12 text-center text-lg font-bold text-slate-900">{{quantity}}</span>
               <button (click)="increaseQuantity()" 
-                      class="w-12 h-12 flex items-center justify-center text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-r-2xl">
+                      class="w-12 h-12 flex items-center justify-center text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-r-2xl transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -232,7 +245,7 @@
             <h3 class="text-lg font-bold text-slate-900">Key Ingredients</h3>
             <div class="flex flex-wrap gap-2">
               <span *ngFor="let ingredient of getIngredients(product.id)" 
-                    class="px-3 py-1.5 bg-slate-50 text-slate-700 text-sm font-medium rounded-full border border-slate-200">
+                    class="px-3 py-1.5 bg-slate-50 text-slate-700 text-sm font-medium rounded-full border border-slate-200 hover:bg-white hover:shadow-sm transition-all cursor-default">
                 {{ingredient}}
               </span>
             </div>
@@ -251,40 +264,40 @@
       <div class="flex items-center justify-between mb-8">
         <h2 class="text-3xl font-black text-slate-900">You May Also Like</h2>
         <button routerLink="/products" 
-                class="text-blue-600 hover:text-blue-700 font-bold text-sm flex items-center gap-2">
+                class="group text-blue-600 hover:text-blue-700 font-bold text-sm flex items-center gap-2 transition-colors">
           View All
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
           </svg>
         </button>
       </div>
       
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-  <div *ngFor="let related of getRelatedProducts(product.id)" 
-       [routerLink]="['/product', related.id]"
-       (click)="loadProduct(related.id)"
-       class="group bg-white rounded-2xl p-6 border border-slate-100 hover:border-blue-200 hover:shadow-xl transition-all duration-300 cursor-pointer">
-    
-    <div class="h-40 flex items-center justify-center mb-4">
-      <img [src]="related.image" 
-           [alt]="related.name" 
-           class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-500">
-    </div>
-    
-    <h4 class="font-bold text-slate-900 mb-1">{{related.name}}</h4>
-    <p class="text-sm text-slate-600 mb-3">{{related.category}}</p>
-    
-    <div class="flex items-center justify-between">
-      <span class="text-xl font-black text-blue-600">{{related.price}} EGP</span>
-      <button (click)="$event.stopPropagation(); addToCart(related)" 
-              class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-</div>
+        <div *ngFor="let related of getRelatedProducts(product.id)" 
+             [routerLink]="['/product', related.id]"
+             (click)="loadProduct(related.id)"
+             class="group bg-white rounded-2xl p-6 border border-slate-100 hover:border-blue-200 hover:shadow-xl transition-all duration-300 cursor-pointer">
+          
+          <div class="h-40 flex items-center justify-center mb-4">
+            <img [src]="related.image" 
+                 [alt]="related.name" 
+                 class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-500">
+          </div>
+          
+          <h4 class="font-bold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">{{related.name}}</h4>
+          <p class="text-sm text-slate-600 mb-3">{{related.category}}</p>
+          
+          <div class="flex items-center justify-between">
+            <span class="text-xl font-black text-blue-600">{{related.price}} EGP</span>
+            <button (click)="$event.stopPropagation(); quickAddToCart(related)" 
+                    class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -19,7 +19,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     'assets/coverImages/2.png',
     'assets/coverImages/nanocareBottel.jpeg',
     'assets/coverImages/Post 5.jpg',
-    'assets/coverImages/supplement-bottle.png'
+    'assets/coverImages/nanocare2.jpg'
   ];
 
   currentIndex = 0;

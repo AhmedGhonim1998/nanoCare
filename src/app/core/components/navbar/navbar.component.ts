@@ -1,42 +1,94 @@
-import { Component, HostListener, ElementRef, ChangeDetectorRef } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
+import { Router, NavigationEnd, RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive } from "@angular/router";
-
+import { filter } from 'rxjs/operators';
 @Component({
   selector: 'app-navbar',
-  standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
   templateUrl: './navbar.component.html',
+  imports: [CommonModule, RouterModule],
   styleUrls: ['./navbar.component.css']
 })
-export class NavbarComponent {
-  // 1. تأكد من تعريفها كـ boolean صريح
-  public isScrolled: boolean = false;
-  public isMenuOpen: boolean = false;
+export class NavbarComponent implements OnInit , OnDestroy {
+  isScrolled = false;
+  isMenuOpen = false;
+  isSearchFocused = false;
+  private routerSub?: Subscription; // لتنظيف الذاكرة
+  
+  constructor(private router: Router) {}
 
-  constructor(private eRef: ElementRef, private cdr: ChangeDetectorRef) {}
-
-  toggleMenu(event: Event) {
-    event.stopPropagation(); 
-    this.isMenuOpen = !this.isMenuOpen;
+  ngOnInit() {
+    this.checkScroll();
+    // Prevent scroll when modal is open
+    this.router.events.subscribe(() => {
+      this.closeMenu();
+    });
+  }
+  ngOnDestroy() {
+    this.routerSub?.unsubscribe(); // مهم جداً لمنع الـ Memory Leak
+  }
+  @HostListener('window:scroll', [])
+  onWindowScroll() {
+    this.checkScroll();
   }
 
-  @HostListener('document:click', ['$event'])
-  clickOut(event: Event) {
-    if (!this.eRef.nativeElement.contains(event.target)) {
-      this.isMenuOpen = false;
+  checkScroll() {
+    this.isScrolled = window.scrollY > 10;
+  }
+
+  toggleMenu(event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.isMenuOpen = !this.isMenuOpen;
+    this.updateBodyScroll();
+  }
+
+  closeMenu() {
+    this.isMenuOpen = false;
+    this.updateBodyScroll();
+  }
+
+  updateBodyScroll() {
+    if (this.isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
     }
   }
 
-  // 2. تحديث الـ Scroll Logic بشكل أدق
-  @HostListener('window:scroll', [])
-  onWindowScroll() {
-    const scrollOffset = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-    
-    // تحديث القيمة
-    this.isScrolled = scrollOffset > 20;
-    
-    // إجبار الأنجولار على تحديث الـ View لو معلق
-    this.cdr.detectChanges();
+  isActiveRoute(route: string): boolean {
+    return this.router.url === route;
+  }
+
+  @HostListener('document:keydown.escape', ['$event'])
+  onEscapeKey(event: Event) {
+    if (this.isMenuOpen) {
+      this.closeMenu();
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onClickOutside(event: Event) {
+    const target = event.target as HTMLElement;
+    // Close menu if clicked outside the menu container and menu button
+    if (this.isMenuOpen) {
+      const clickedInMenu = target.closest('.mobile-menu-container') !== null;
+      const clickedMenuButton = target.closest('.menu-button') !== null;
+      
+      if (!clickedInMenu && !clickedMenuButton) {
+        this.closeMenu();
+      }
+    }
+  }
+
+  onSearchFocus() {
+    this.isSearchFocused = true;
+  }
+
+  onSearchBlur() {
+    this.isSearchFocused = false;
   }
 }
